@@ -2,7 +2,7 @@ import os
 import time
 import requests
 from dotenv import load_dotenv
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 load_dotenv()
 
@@ -12,19 +12,59 @@ OFFER_HASHES = os.getenv("OFFER_HASHES").split(',')
 NOONES_AUTOGREETING_MESSAGE = os.getenv("NOONES_AUTOGREETING_MESSAGE")
 NOONES_AUTOGREETING_DELAY = int(os.getenv("NOONES_AUTOGREETING_DELAY"))
 
-print("OFFER_HASHES:", OFFER_HASHES)
-
-
 @app.route('/webhook', methods=['POST'])
 def webhook():
     webhook_event = request.json
-    print("Received webhook event:", webhook_event)
-    
+
     if webhook_event['event'] == 'trade.started' and webhook_event['data']['offer_hash'] in OFFER_HASHES:
         time.sleep(NOONES_AUTOGREETING_DELAY / 1000)
         send_greeting_message(webhook_event['data']['trade_hash'])
 
     return "OK", 200
+
+@app.route('/trade-chat/get', methods=['POST'])
+def get_trade_chat():
+    access_token = get_access_token()
+    headers = {'Authorization': f'Bearer {access_token}'}
+
+    trade_hash = request.form.get('trade_hash')
+
+    if not trade_hash:
+        return jsonify({"status": "error", "timestamp": int(time.time())}), 400
+
+    # Fetch trade chat messages
+    trade_chat_url = 'https://api.noones.com/noones/v1/trade-chat/get'
+    data = {'trade_hash': trade_hash}
+    response = requests.post(trade_chat_url, data=data, headers=headers)
+
+    if response.status_code == 200:
+        response_data = response.json()
+        return jsonify({"data": response_data, "status": "success", "timestamp": int(time.time())}), 200
+    else:
+        return jsonify({"status": "error", "timestamp": int(time.time())}), 400
+
+@app.route('/trade-chat/post', methods=['POST'])
+def post_trade_chat():
+    access_token = get_access_token()
+    headers = {'Authorization': f'Bearer {access_token}'}
+
+    message = request.form.get('message')
+    trade_hash = request.form.get('trade_hash')
+
+    if not message or not trade_hash:
+        return jsonify({"status": "error", "timestamp": int(time.time())}), 400
+
+    # Post trade chat messages
+    trade_chat_url = 'https://api.noones.com/noones/v1/trade-chat/post'
+    data = {'trade_hash': trade_hash, 'message': message}
+    response = requests.post(trade_chat_url, data=data, headers=headers)
+
+    if response.status_code == 200:
+        response_data = response.json()
+        return jsonify({"data": response_data, "status": "success", "timestamp": int(time.time())}), 200
+    else:
+        return jsonify({"status": "error", "timestamp": int(time.time())}), 400
+
 
 def send_greeting_message(trade_hash):
     access_token = get_access_token()
