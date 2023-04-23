@@ -12,6 +12,9 @@ OFFER_HASHES = os.getenv("OFFER_HASHES").split(',')
 NOONES_AUTOGREETING_MESSAGE = os.getenv("NOONES_AUTOGREETING_MESSAGE")
 NOONES_AUTOGREETING_DELAY = int(os.getenv("NOONES_AUTOGREETING_DELAY"))
 
+print("OFFER_HASHES:", OFFER_HASHES)
+
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     webhook_event = request.json
