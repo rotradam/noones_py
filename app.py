@@ -15,7 +15,8 @@ NOONES_AUTOGREETING_DELAY = int(os.getenv("NOONES_AUTOGREETING_DELAY"))
 @app.route('/webhook', methods=['POST'])
 def webhook():
     webhook_event = request.json
-
+    print("Received webhook event:", webhook_event)
+    
     if webhook_event['event'] == 'trade.started' and webhook_event['data']['offer_hash'] in OFFER_HASHES:
         time.sleep(NOONES_AUTOGREETING_DELAY / 1000)
         send_greeting_message(webhook_event['data']['trade_hash'])
