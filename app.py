@@ -14,16 +14,20 @@ NOONES_AUTOGREETING_DELAY = int(os.getenv("NOONES_AUTOGREETING_DELAY"))
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    webhook_event = request.json
+    try:
+        webhook_event = request.json
+        print(f"Webhook data: {webhook_event}")
 
-    # Add logging to print received webhook data
-    print(f"Received webhook data: {webhook_event}")
+        if webhook_event['event'] == 'trade.started' and webhook_event['data']['offer_hash'] in OFFER_HASHES:
+            time.sleep(NOONES_AUTOGREETING_DELAY / 1000)
+            send_greeting_message(webhook_event['data']['trade_hash'])
 
-    if webhook_event['event'] == 'trade.started' and webhook_event['data']['offer_hash'] in OFFER_HASHES:
-        time.sleep(NOONES_AUTOGREETING_DELAY / 1000)
-        send_greeting_message(webhook_event['data']['trade_hash'])
+        return "OK", 200
 
-    return "OK", 200
+    except Exception as e:
+        print(f"Error processing webhook: {e}")
+        return "Error", 400
+
 @app.route('/trade-chat/get', methods=['POST'])
 def get_trade_chat():
     access_token = get_access_token()
