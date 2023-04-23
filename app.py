@@ -16,12 +16,14 @@ NOONES_AUTOGREETING_DELAY = int(os.getenv("NOONES_AUTOGREETING_DELAY"))
 def webhook():
     webhook_event = request.json
 
+    # Add logging to print received webhook data
+    print(f"Received webhook data: {webhook_event}")
+
     if webhook_event['event'] == 'trade.started' and webhook_event['data']['offer_hash'] in OFFER_HASHES:
         time.sleep(NOONES_AUTOGREETING_DELAY / 1000)
         send_greeting_message(webhook_event['data']['trade_hash'])
 
     return "OK", 200
-
 @app.route('/trade-chat/get', methods=['POST'])
 def get_trade_chat():
     access_token = get_access_token()
