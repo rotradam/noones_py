@@ -95,7 +95,7 @@ def post_trade_chat():
 
 def send_greeting_message(trade_hash):
     access_token = get_access_token()
-    trade_chat_url = 'https://api.noones.com/trade-chat/post'
+    trade_chat_url = 'https://api.noones.com/noones/v1/trade-chat/post'  # Update the API endpoint here
     headers = {'Authorization': f'Bearer {access_token}'}
     data = {'trade_hash': trade_hash, 'message': NOONES_AUTOGREETING_MESSAGE}
     response = requests.post(trade_chat_url, json=data, headers=headers)
@@ -104,6 +104,7 @@ def send_greeting_message(trade_hash):
         print(f"Sent greeting message for trade hash: {trade_hash}")
     else:
         print(f"Error sending greeting message for trade hash: {trade_hash}")
+
 
 def get_access_token():
     token_url = 'https://auth.noones.com/oauth2/token'
