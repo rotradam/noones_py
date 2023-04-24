@@ -21,6 +21,9 @@ PUBLIC_KEY = os.getenv("PUBLIC_KEY")
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    print(f"Request headers: {request.headers}")  # Add this line for logging headers
+    print(f"Request data: {request.data}")  # Add this line for logging request data
+
     # Check for validation request
     if not request.json:
         challenge_header = request.headers.get('X-Noones-Request-Challenge')
