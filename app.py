@@ -99,9 +99,12 @@ def post_trade_chat():
 def send_greeting_message(trade_hash):
     access_token = get_access_token()
     trade_chat_url = 'https://api.noones.com/noones/v1/trade-chat/post'  # Update the API endpoint here
-    headers = {'Authorization': f'Bearer {access_token}'}
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/x-www-form-urlencoded'  # Add this line to set the Content-Type header
+    }
     data = {'trade_hash': trade_hash, 'message': NOONES_AUTOGREETING_MESSAGE}
-    response = requests.post(trade_chat_url, json=data, headers=headers)
+    response = requests.post(trade_chat_url, data=data, headers=headers)  # Replace 'json' with 'data'
 
     if response.status_code == 200:
         print(f"Sent greeting message for trade hash: {trade_hash}")
