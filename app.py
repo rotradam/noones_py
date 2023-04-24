@@ -2,7 +2,11 @@ import os
 import time
 import requests
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
+import json
+import nacl.signing
+import nacl.encoding
+import base64
 
 load_dotenv()
 
@@ -12,21 +16,39 @@ OFFER_HASHES = os.getenv("OFFER_HASHES").split(',')
 NOONES_AUTOGREETING_MESSAGE = os.getenv("NOONES_AUTOGREETING_MESSAGE")
 NOONES_AUTOGREETING_DELAY = int(os.getenv("NOONES_AUTOGREETING_DELAY"))
 
+# Replace the public key with the correct one for Noones
+PUBLIC_KEY = os.getenv("PUBLIC_KEY")
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    # Check for validation request
+    if not request.json:
+        challenge_header = request.headers.get('X-Noones-Request-Challenge')
+        response = Response()
+        response.headers['X-Noones-Request-Challenge'] = challenge_header
+        return response
+
+    # Validate the signature
+    signature = request.headers.get('X-Noones-Signature')
+    webhook_target_url = os.environ.get('WEBHOOK_TARGET_URL')
+    signature_validation_payload = f'{webhook_target_url}:{request.data.decode("utf-8")}'
+
+    public_key = nacl.signing.VerifyKey(
+        base64.b64decode(PUBLIC_KEY))  # Use the correct public key here
+
     try:
-        webhook_event = request.json
-        print(f"Webhook data: {webhook_event}")
+        public_key.verify(signature_validation_payload.encode('utf-8'),
+                          base64.b64decode(signature))
+    except nacl.exceptions.BadSignatureError:
+        return Response("Invalid signature", status=401)
 
-        if webhook_event['event'] == 'trade.started' and webhook_event['data']['offer_hash'] in OFFER_HASHES:
-            time.sleep(NOONES_AUTOGREETING_DELAY / 1000)
-            send_greeting_message(webhook_event['data']['trade_hash'])
+    # Process the webhook
+    event_data = request.json
 
-        return "OK", 200
+    # Add your processing logic here
+    print(event_data)
 
-    except Exception as e:
-        print(f"Error processing webhook: {e}")
-        return "Error", 400
+    return Response("OK", status=200)
 
 @app.route('/trade-chat/get', methods=['POST'])
 def get_trade_chat():
@@ -70,7 +92,6 @@ def post_trade_chat():
         return jsonify({"data": response_data, "status": "success", "timestamp": int(time.time())}), 200
     else:
         return jsonify({"status": "error", "timestamp": int(time.time())}), 400
-
 
 def send_greeting_message(trade_hash):
     access_token = get_access_token()
